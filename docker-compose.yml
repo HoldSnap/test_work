@@ -10,25 +10,3 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3306:3306"
-
-  php:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - ./public:/var/www/html
-    working_dir: /var/www/html
-    depends_on:
-      - db
-    command: sh -c "composer install && php -S 0.0.0.0:8888"
-
-  vue:
-    image: node:latest
-    working_dir: /app
-    volumes:
-      - ./public/Front:/app
-    command: sh -c "npm install && npm run dev"
-    ports:
-      - "5173:5173"
-    depends_on:
-      - php
