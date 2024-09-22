@@ -34,7 +34,42 @@ $app->get('/comments', function (Request $request, Response $response) use ($pdo
     return $response->withHeader('Content-Type', 'application/json');
 });
 
+$app->post('/comments', function (Request $request, Response $response) use ($pdo) {
+    $data = json_decode($request->getBody()->getContents(), true);
 
+    if (strpos($request->getHeaderLine('User-Agent'), 'Postman') === false) {
+        $recaptcha = $data['recaptcha'];
+        $secretKey = $_ENV['RECAPTCHA_SECRET_KEY'];
+        $verifyResponse = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret={$secretKey}&response={$recaptcha}");
+        $responseData = json_decode($verifyResponse);
+
+        if (!$responseData->success) {
+            return $response->withStatus(400)->getBody()->write('Ошибка проверки reCAPTCHA');
+        }
+    }
+
+    $stmt = $pdo->prepare("INSERT INTO comments (name, text) VALUES (:name, :text)");
+    $stmt->execute(['name' => $data['name'], 'text' => $data['text']]);
+
+    $responseData = ['status' => 'success'];
+    $response->getBody()->write(json_encode($responseData));
+    return $response->withHeader('Content-Type', 'application/json');
+});
+
+
+
+$app->delete('/comments/{id}', function (Request $request, Response $response, $args) use ($pdo) {
+    $id = $args['id'];
+    error_log("Deleting comment with ID: $id");
+    $stmt = $pdo->prepare("DELETE FROM comments WHERE id = :id");
+    $stmt->execute(['id' => $id]);
+
+    if ($stmt->rowCount() === 0) {
+        return $response->withStatus(404)->write('Comment not found');
+    }
+
+    return $response->withStatus(204);
+});
 
 $app->options('/comments/{id}', function (Request $request, Response $response) {
     return $response->withHeader('Access-Control-Allow-Origin', '*')
