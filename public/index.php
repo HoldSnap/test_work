@@ -12,7 +12,6 @@ $dotenv->load();
 
 $app = AppFactory::create();
 
-// Middleware для включения CORS
 $app->add(function (Request $request, RequestHandlerInterface $handler): Response {
     $response = $handler->handle($request);
     return $response->withHeader('Access-Control-Allow-Origin', '*')
@@ -20,7 +19,26 @@ $app->add(function (Request $request, RequestHandlerInterface $handler): Respons
         ->withHeader('Access-Control-Allow-Headers', 'Content-Type');
 });
 
-$pdo = new PDO('mysql:host=127.0.0.1;dbname=comments_db', 'root', 'root_password');
+
+
+
+$dsn = 'mysql:host=127.0.0.1;dbname=' . $_ENV['MYSQL_DATABASE'];
+$dbUser = $_ENV['MYSQL_USER'];
+$dbPassword = $_ENV['MYSQL_PASSWORD'];
+
+$pdo = new PDO($dsn, $dbUser, $dbPassword);
+
+$pdo->exec("SET time_zone = '+03:00'");
+$createTableQuery = "
+    CREATE TABLE IF NOT EXISTS comments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        text TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+";
+
+$pdo->exec($createTableQuery);
 
 $app->get('/', function (Request $request, Response $response) {
     $response->getBody()->write("Welcome to the comments API!");
@@ -55,8 +73,6 @@ $app->post('/comments', function (Request $request, Response $response) use ($pd
     $response->getBody()->write(json_encode($responseData));
     return $response->withHeader('Content-Type', 'application/json');
 });
-
-
 
 $app->delete('/comments/{id}', function (Request $request, Response $response, $args) use ($pdo) {
     $id = $args['id'];
