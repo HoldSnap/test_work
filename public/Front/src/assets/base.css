@@ -1,6 +1,7 @@
 /*Обнуление*/
 
 * {
+
     padding: 0;
     margin: 0;
     border: 0;
@@ -33,6 +34,9 @@ aside {
 
 html,
 body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #f9a825, #ff6f00);
+    color: #333;
     height: 100%;
     width: 100%;
     font-size: 100%;
